@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import { registerPageTools } from "./tools/page.js";
 import { registerSubscriberTools } from "./tools/subscriber.js";
@@ -30,14 +30,20 @@ if (useHttp) {
   const app = express();
   app.use(express.json());
 
-  // Using sessionIdGenerator: undefined to make it stateless
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined
+  let transport: SSEServerTransport | null = null;
+
+  app.get("/sse", async (req, res) => {
+    transport = new SSEServerTransport("/message", res);
+    await server.connect(transport);
   });
 
-  app.all("/sse", async (req, res) => {
+  app.post("/message", async (req, res) => {
+    if (!transport) {
+      res.status(500).json({ error: "Session not initialized" });
+      return;
+    }
     try {
-      await transport.handleRequest(req, res, req.body);
+      await transport.handlePostMessage(req, res, req.body);
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "Internal Server Error" });
@@ -49,11 +55,6 @@ if (useHttp) {
     server: "manychat-mcp-server",
     version: "1.0.0"
   }));
-
-  const connectServer = async () => {
-    await server.connect(transport);
-  };
-  connectServer().catch(console.error);
 
   const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, () => {
