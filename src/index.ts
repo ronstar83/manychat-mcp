@@ -35,7 +35,7 @@ if (useHttp) {
     sessionIdGenerator: undefined
   });
 
-  app.post("/mcp", async (req, res) => {
+  app.all("/sse", async (req, res) => {
     try {
       await transport.handleRequest(req, res, req.body);
     } catch (e) {
