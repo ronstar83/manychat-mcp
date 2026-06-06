@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  manychat-mcp:
+    image: manychat-mcp-server
+    build: .
+    restart: unless-stopped
+    environment:
+      - MANYCHAT_API_TOKEN=${MANYCHAT_API_TOKEN}
+      - PORT=3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.manychat-mcp.rule=Host(`manychat-mcp.yourdomain.com`)"
+      - "traefik.http.routers.manychat-mcp.entrypoints=websecure"
+      - "traefik.http.routers.manychat-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.manychat-mcp.loadbalancer.server.port=3000"
+    networks:
+      - traefik-proxy
+
+networks:
+  traefik-proxy:
+    external: true
