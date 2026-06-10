@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     environment:
       - MANYCHAT_API_TOKEN=${MANYCHAT_API_TOKEN}
+      - MANYCHAT_WHATSAPP_REPLY_FIELD_ID=${MANYCHAT_WHATSAPP_REPLY_FIELD_ID}
+      - MANYCHAT_WHATSAPP_REPLY_FLOW_NS=${MANYCHAT_WHATSAPP_REPLY_FLOW_NS}
       - PORT=3000
     labels:
       - "traefik.enable=true"

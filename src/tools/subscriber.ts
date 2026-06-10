@@ -1,19 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { manychat } from "../api/manychat.js";
-
-function formatResponse(data: any) {
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }]
-  };
-}
-
-function handleError(error: any) {
-  return {
-    isError: true,
-    content: [{ type: "text" as const, text: error.message || String(error) }]
-  };
-}
+import { formatResponse, handleError } from "../utils/response.js";
 
 export function registerSubscriberTools(server: McpServer) {
   server.tool("manychat_get_subscriber",

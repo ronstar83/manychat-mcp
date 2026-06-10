@@ -13,6 +13,17 @@ An MCP (Model Context Protocol) server for the ManyChat API. Manage subscribers,
 - Node.js >= 20
 - A ManyChat API Token. You can generate one at [manychat.com → Settings → API](https://help.manychat.com/hc/en-us/articles/14959510331420).
 
+## Configuration (Environment Variables)
+
+| Variable | Required | Description |
+|---|---|---|
+| `MANYCHAT_API_TOKEN` | Yes | Your ManyChat API token. |
+| `PORT` | No | Port for HTTP transport (default: `3000`). |
+| `MANYCHAT_WHATSAPP_REPLY_FIELD_ID` | For WhatsApp sending | Numeric ID of the custom field that holds the reply text. Find it via `manychat_list_custom_fields`. |
+| `MANYCHAT_WHATSAPP_REPLY_FLOW_NS` | For WhatsApp sending | Namespace of the flow that sends that field's content to the subscriber. Find it via `manychat_list_flows`. |
+
+ManyChat's API rejects direct `sendContent` calls for WhatsApp subscribers. As a workaround, `manychat_send_content` with `channel: "whatsapp"` writes the text into the configured custom field and then triggers the configured flow. If these two variables are not set, WhatsApp sends fail with a clear error message. Copy `.env.example` to `.env` and fill in your account-specific values.
+
 ## Installation
 
 ### 1. Claude Desktop (stdio via npx)

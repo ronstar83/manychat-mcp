@@ -1,23 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { manychat } from "../api/manychat.js";
-
-function formatResponse(data: any) {
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }]
-  };
-}
-
-function handleError(error: any) {
-  const details = error?.response?.data || error?.data || error?.cause || null;
-  const text = details
-    ? `${error.message || String(error)}\n${JSON.stringify(details, null, 2)}`
-    : (error.message || String(error));
-  return {
-    isError: true,
-    content: [{ type: "text" as const, text }]
-  };
-}
+import { formatResponse, handleError } from "../utils/response.js";
 
 export function registerSendingTools(server: McpServer) {
   server.tool("manychat_send_flow",
@@ -68,8 +52,18 @@ export function registerSendingTools(server: McpServer) {
         // account pattern: write the reply to the existing custom field "Antwort von GPT"
         // and trigger the existing ManyChat flow that sends that field to the subscriber.
         if (channel === "whatsapp") {
-          const fieldId = Number(process.env.MANYCHAT_WHATSAPP_REPLY_FIELD_ID || 11251644);
-          const flowNs = process.env.MANYCHAT_WHATSAPP_REPLY_FLOW_NS || "content20260604143026_726781";
+          const fieldIdRaw = process.env.MANYCHAT_WHATSAPP_REPLY_FIELD_ID;
+          const flowNs = process.env.MANYCHAT_WHATSAPP_REPLY_FLOW_NS;
+          if (!fieldIdRaw) {
+            throw new Error("MANYCHAT_WHATSAPP_REPLY_FIELD_ID not configured — set it in your .env");
+          }
+          if (!flowNs) {
+            throw new Error("MANYCHAT_WHATSAPP_REPLY_FLOW_NS not configured — set it in your .env");
+          }
+          const fieldId = Number(fieldIdRaw);
+          if (!Number.isFinite(fieldId)) {
+            throw new Error("MANYCHAT_WHATSAPP_REPLY_FIELD_ID must be a numeric custom field ID — check your .env");
+          }
           const setField = await manychat.post("/fb/subscriber/setCustomField", {
             subscriber_id,
             field_id: fieldId,
