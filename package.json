@@ -1,7 +1,7 @@
 {
   "name": "manychat-mcp-server",
-  "version": "1.0.0",
-  "description": "MCP server for ManyChat API — manage subscribers, tags, flows and messaging",
+  "version": "1.1.0",
+  "description": "MCP server for the full ManyChat REST API — subscribers, tags, flows, and rich Dynamic Block messaging",
   "main": "dist/index.js",
   "bin": {
     "manychat-mcp-server": "dist/index.js"

@@ -51,6 +51,47 @@ export function registerSubscriberTools(server: McpServer) {
     }
   );
 
+  server.tool("manychat_find_subscriber_by_system_field",
+    "Find a subscriber by their system-level email or phone number (distinct from custom fields). " +
+    "Note: on some accounts the phone parameter is known to return empty results even for an existing " +
+    "subscriber — prefer email when possible, or fall back to manychat_find_subscribers_by_name.",
+    {
+      email: z.string().email().optional(),
+      phone: z.string().optional().describe("E.164 phone number")
+    },
+    async ({ email, phone }) => {
+      try {
+        if (!email && !phone) {
+          throw new Error("Either email or phone must be provided");
+        }
+        const params: Record<string, string> = {};
+        if (email) params.email = email;
+        if (phone) params.phone = phone;
+        const response = await manychat.get("/fb/subscriber/findBySystemField", params);
+        return formatResponse(response);
+      } catch (error) {
+        return handleError(error);
+      }
+    }
+  );
+
+  server.tool("manychat_get_subscriber_by_user_ref",
+    "Get subscriber info using a Messenger user_ref (from the Checkbox Plugin or Customer Chat widget) " +
+    "instead of a subscriber_id, for people who messaged the page but don't have a subscriber_id yet.",
+    {
+      user_ref: z.number().int().positive()
+        .describe("Messenger user_ref, valid for 24h after the user's action")
+    },
+    async ({ user_ref }) => {
+      try {
+        const response = await manychat.get("/fb/subscriber/getInfoByUserRef", { user_ref });
+        return formatResponse(response);
+      } catch (error) {
+        return handleError(error);
+      }
+    }
+  );
+
   server.tool("manychat_create_subscriber",
     "Create a new subscriber (phone or email required)",
     {
@@ -73,6 +114,48 @@ export function registerSubscriberTools(server: McpServer) {
           throw new Error("consent_phrase is required when opting in to SMS or Email");
         }
         const response = await manychat.post("/fb/subscriber/createSubscriber", params);
+        return formatResponse(response);
+      } catch (error) {
+        return handleError(error);
+      }
+    }
+  );
+
+  server.tool("manychat_update_subscriber",
+    "Update profile fields (name, phone, email, gender) on an existing subscriber. " +
+    "Note: whatsapp_phone is not reliably updatable through this endpoint on all accounts.",
+    {
+      subscriber_id: z.number().int().positive(),
+      first_name: z.string().optional(),
+      last_name: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().email().optional(),
+      gender: z.enum(["male", "female"]).optional()
+    },
+    async ({ subscriber_id, ...fields }) => {
+      try {
+        const hasUpdate = Object.values(fields).some((value) => value !== undefined);
+        if (!hasUpdate) {
+          throw new Error("Provide at least one field to update (first_name, last_name, phone, email, or gender)");
+        }
+        const response = await manychat.post("/fb/subscriber/updateSubscriber", { subscriber_id, ...fields });
+        return formatResponse(response);
+      } catch (error) {
+        return handleError(error);
+      }
+    }
+  );
+
+  server.tool("manychat_verify_signed_request",
+    "Verify a Messenger Extensions signed_request for a subscriber (webview/JS SDK auth handshake)",
+    {
+      subscriber_id: z.number().int().positive(),
+      signed_request: z.string()
+        .describe("The signed_request string received from the Messenger Extensions SDK")
+    },
+    async ({ subscriber_id, signed_request }) => {
+      try {
+        const response = await manychat.post("/fb/subscriber/verifyBySignedRequest", { subscriber_id, signed_request });
         return formatResponse(response);
       } catch (error) {
         return handleError(error);
